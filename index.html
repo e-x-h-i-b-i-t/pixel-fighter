@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Sword Fighter</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/src/index.css">
+</head>
+<body>
+  <div id="app-container">
+    <div id="game-canvas-wrapper">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Main Menu Overlay -->
+      <div id="main-menu" class="ui-overlay">
+        <h1 class="menu-title">PIXEL SWORD FIGHTER</h1>
+        <div class="menu-buttons">
+          <button id="btn-play" class="btn-primary">PLAY GAME</button>
+          <button id="btn-settings" class="btn-secondary">SETTINGS</button>
+          <button id="btn-achievements" class="btn-secondary">ACHIEVEMENTS</button>
+        </div>
+      </div>
+
+      <!-- Character / Weapon Selection Screen -->
+      <div id="selection-screen" class="ui-overlay hidden">
+        <h2 class="section-title">CHOOSE YOUR FIGHTER</h2>
+        <div class="selection-grid">
+          <!-- Player Selection -->
+          <div class="selection-panel">
+            <h3>PLAYER 1</h3>
+            <div class="form-group">
+              <label>Character Class</label>
+              <select id="p1-class">
+                <option value="knight">Knight</option>
+                <option value="samurai">Samurai</option>
+                <option value="assassin">Assassin</option>
+                <option value="mage">Mage Warrior</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Weapon Loadout</label>
+              <select id="p1-sword">
+                <option value="steelBroadsword">Steel Broadsword</option>
+                <option value="flameTongue">Flame Tongue (Fire)</option>
+                <option value="frostBrand">Frost Brand (Ice)</option>
+                <option value="stormBringer">Storm Bringer (Lightning)</option>
+                <option value="vampiricBlade">Vampiric Blade (Lifesteal)</option>
+                <option value="executionerAxe">Executioner's Axe (+Damage)</option>
+                <option value="muramasa">Muramasa (+Crit)</option>
+                <option value="spellfireEdge">Spellfire Edge (+Mana)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- AI Opponent Selection -->
+          <div class="selection-panel">
+            <h3>AI OPPONENT</h3>
+            <div class="form-group">
+              <label>Character Class</label>
+              <select id="p2-class">
+                <option value="samurai">Samurai</option>
+                <option value="knight">Knight</option>
+                <option value="assassin">Assassin</option>
+                <option value="mage">Mage Warrior</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Weapon Loadout</label>
+              <select id="p2-sword">
+                <option value="steelBroadsword">Steel Broadsword</option>
+                <option value="flameTongue">Flame Tongue (Fire)</option>
+                <option value="frostBrand">Frost Brand (Ice)</option>
+                <option value="stormBringer">Storm Bringer (Lightning)</option>
+                <option value="vampiricBlade">Vampiric Blade (Lifesteal)</option>
+                <option value="executionerAxe">Executioner's Axe (+Damage)</option>
+                <option value="muramasa">Muramasa (+Crit)</option>
+                <option value="spellfireEdge">Spellfire Edge (+Mana)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>AI Difficulty</label>
+              <select id="ai-difficulty">
+                <option value="medium">Medium</option>
+                <option value="easy">Easy</option>
+                <option value="hard">Hard</option>
+                <option value="nightmare">Nightmare</option>
+                <option value="adaptive">Adaptive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arena Selection -->
+        <div class="arena-selection-panel">
+          <div class="form-group" style="margin-top: 10px;">
+            <label>Battle Arena</label>
+            <select id="arena-select">
+              <option value="forestTemple">Forest Temple</option>
+              <option value="frozenMountain">Frozen Mountain</option>
+              <option value="volcano">Volcano</option>
+              <option value="darkCastle">Dark Castle</option>
+              <option value="skyKingdom">Sky Kingdom</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="selection-actions">
+          <button id="btn-fight" class="btn-primary">FIGHT!</button>
+          <button id="btn-select-back" class="btn-secondary">BACK</button>
+        </div>
+      </div>
+
+      <!-- Pause Overlay -->
+      <div id="pause-screen" class="ui-overlay hidden">
+        <h2 class="menu-title">PAUSED</h2>
+        <div class="menu-buttons">
+          <button id="btn-resume" class="btn-primary">RESUME</button>
+          <button id="btn-pause-quit" class="btn-secondary">QUIT TO MAIN MENU</button>
+        </div>
+      </div>
+
+      <!-- Results Overlay -->
+      <div id="results-screen" class="ui-overlay hidden">
+        <h1 id="results-title" class="menu-title">VICTORY</h1>
+        <div id="results-stats" class="results-stats">
+          <!-- Populated dynamically -->
+        </div>
+        <div class="menu-buttons">
+          <button id="btn-rematch" class="btn-primary">REMATCH</button>
+          <button id="btn-results-character" class="btn-secondary">CHARACTER SELECT</button>
+          <button id="btn-results-menu" class="btn-secondary">MAIN MENU</button>
+        </div>
+      </div>
+
+      <!-- Settings Overlay -->
+      <div id="settings-screen" class="ui-overlay hidden">
+        <h2 class="section-title">SETTINGS</h2>
+        <div class="selection-panel" style="width: 100%; max-width: 380px;">
+          <div class="form-group">
+            <label for="music-volume">Music Volume</label>
+            <input type="range" id="music-volume" min="0" max="1" step="0.05" value="0.25" style="width:100%;">
+          </div>
+          <div class="form-group" style="margin-top: 15px;">
+            <label for="sfx-volume">SFX Volume</label>
+            <input type="range" id="sfx-volume" min="0" max="1" step="0.05" value="0.45" style="width:100%;">
+          </div>
+          <button id="btn-reset-save" class="btn-secondary" style="margin-top: 20px; border-color: #ef4444; color: #ef4444; width: 100%;">RESET SAVE DATA</button>
+        </div>
+        <button id="btn-settings-back" class="btn-secondary" style="margin-top: 20px;">BACK</button>
+      </div>
+
+      <!-- Achievements Overlay -->
+      <div id="achievements-screen" class="ui-overlay hidden">
+        <h2 class="section-title">ACHIEVEMENTS</h2>
+        <div id="achievements-list" class="results-stats" style="max-height: 300px; overflow-y: auto; max-width: 480px; width: 100%;">
+          <!-- Populated dynamically -->
+        </div>
+        <button id="btn-achievements-back" class="btn-secondary" style="margin-top: 20px;">BACK</button>
+      </div>
+    </div>
+
+    <!-- Premium Loading Screen -->
+    <div id="loading-overlay">
+      <div class="loader-title">PIXEL SWORD FIGHTER</div>
+      <div class="loader-bar-container">
+        <div id="loader-bar-fill" class="loader-bar-fill"></div>
+      </div>
+      <div id="loader-text" class="loader-text">Initializing Engine...</div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

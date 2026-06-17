@@ -1,0 +1,397 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Press+Start+2P&display=swap');
+
+:root {
+  --bg-color: #0b0b0e;
+  --panel-bg: rgba(18, 18, 24, 0.85);
+  --border-glow: rgba(147, 51, 234, 0.3);
+  --accent-color: #a855f7;
+  --text-color: #f3f4f6;
+  --neon-blue: #06b6d4;
+  --neon-pink: #ec4899;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Outfit', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(147, 51, 234, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
+    linear-gradient(to bottom, #070709, #0b0b0e);
+}
+
+#app-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#game-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 1920px;
+  max-height: 1080px;
+  aspect-ratio: 16/9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #000;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px var(--border-glow);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Loading Overlay */
+#loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #070709;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  transition: opacity 0.5s ease-out;
+}
+
+.loader-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 28px;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, var(--neon-pink), var(--accent-color), var(--neon-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  letter-spacing: 2px;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.loader-bar-container {
+  width: 320px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.loader-bar-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-pink), var(--accent-color), var(--neon-blue));
+  box-shadow: 0 0 8px var(--accent-color);
+  transition: width 0.1s ease-out;
+}
+
+.loader-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 15px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+    filter: brightness(1.2);
+  }
+}
+
+/* UI Overlay Screens */
+.ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(10, 10, 14, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  padding: 30px;
+  animation: fadeIn 0.3s ease-out;
+  transition: opacity 0.3s ease;
+}
+
+.ui-overlay.hidden {
+  display: none !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.menu-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 26px;
+  margin-bottom: 40px;
+  text-align: center;
+  background: linear-gradient(135deg, #a855f7, #06b6d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.4));
+  letter-spacing: 2px;
+}
+
+.victory-title {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.5));
+}
+
+.defeat-title {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.5));
+}
+
+.section-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  margin-bottom: 25px;
+  color: #e2e8f0;
+  letter-spacing: 1px;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 240px;
+}
+
+/* Button Designs */
+.btn-primary, .btn-secondary {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #a855f7, #6b21a8);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: rgba(30, 41, 59, 0.5);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover {
+  background: rgba(51, 65, 85, 0.7);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Character Selection Panel Layouts */
+.selection-grid {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 580px;
+}
+
+.selection-panel {
+  flex: 1;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selection-panel h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #a855f7;
+  margin-bottom: 10px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+}
+
+.form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a3b8;
+}
+
+.form-group select {
+  font-family: 'Outfit', sans-serif;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #fff;
+  padding: 8px 12px;
+  outline: none;
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+
+.form-group select:focus {
+  border-color: #a855f7;
+}
+
+.arena-selection-panel {
+  width: 100%;
+  max-width: 580px;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 25px;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 15px;
+}
+
+/* Results statistics styling */
+.results-stats {
+  width: 100%;
+  max-width: 320px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.stat-row span:first-child {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.stat-row span:last-child {
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Achievement Toast Styling */
+.achievement-toast {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 280px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 2px solid #eab308;
+  box-shadow: 0 4px 20px rgba(234, 179, 8, 0.25);
+  border-radius: 8px;
+  padding: 16px;
+  color: #fff;
+  z-index: 100;
+  pointer-events: none;
+  transform: translateX(320px);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.achievement-toast.show {
+  transform: translateX(0);
+}
+
+.toast-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #eab308;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+
+.toast-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: bold;
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.toast-desc {
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  color: #94a3b8;
+}
