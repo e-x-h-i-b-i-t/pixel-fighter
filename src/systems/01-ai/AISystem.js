@@ -1,11 +1,13 @@
 import { ComponentTypes } from '../../ecs/componentTypes.js';
+import { encodeState } from '../../ai/StateEncoder.js';
 
 /**
  * ECS System to run AI decision making and buffer virtual inputs.
  * Runs in Step 2 of the execution cycle.
- * @param {World} world 
+ * @param {World} world
+ * @param {import('../../ai/RLAgent.js').RLAgent|null} [rlAgent] - Optional RL agent (used when difficulty === 'adaptive')
  */
-export function aiSystem(world) {
+export function aiSystem(world, rlAgent = null) {
   const aiEntities = world.query([ComponentTypes.AI_CONTROLLER, ComponentTypes.TRANSFORM]);
   const playerEntities = world.query([ComponentTypes.INPUT_CONTROLLER, ComponentTypes.TRANSFORM]);
 
@@ -24,6 +26,18 @@ export function aiSystem(world) {
       transform.aiMoveDir = 0;
       transform.aiIsRunning = false;
       continue;
+    }
+
+    // ── Adaptive (RL) path ────────────────────────────────────────────────
+    if (ai.difficulty === 'adaptive' && rlAgent && playerEntityId !== null) {
+      const stateKey = encodeState(world, aiId, playerEntityId);
+      if (stateKey) {
+        const action = rlAgent.chooseAction(stateKey);
+        _applyRLAction(transform, action);
+        rlAgent.lastState  = stateKey;
+        rlAgent.lastAction = action;
+        continue; // Skip rule-based logic
+      }
     }
 
     // Assign target (default to primary player, fallback to any other character)
@@ -153,3 +167,52 @@ export function aiSystem(world) {
     }
   }
 }
+
+// ── RL Helper ─────────────────────────────────────────────────────────────────
+
+/**
+ * Maps an RL action string to the same transform flags used by the rule-based AI.
+ * @param {Object} transform - ECS Transform component
+ * @param {string} action    - One of RL_ACTIONS
+ */
+function _applyRLAction(transform, action) {
+  // Reset movement direction first
+  transform.aiMoveDir    = 0;
+  transform.aiIsRunning  = false;
+  transform.aiBufferedAction = null;
+
+  switch (action) {
+    case 'move_toward':
+      transform.aiMoveDir   = 1;  // will be corrected to face player by caller context
+      transform.aiIsRunning = true;
+      break;
+    case 'move_away':
+      transform.aiMoveDir   = -1;
+      transform.aiIsRunning = false;
+      break;
+    case 'idle':
+      // stay still — defaults above are correct
+      break;
+    case 'jump':
+      transform.aiBufferedAction = 'jump';
+      break;
+    case 'light_attack':
+      transform.aiBufferedAction = 'lightAttack';
+      break;
+    case 'heavy_attack':
+      transform.aiBufferedAction = 'heavyAttack';
+      break;
+    case 'parry':
+      transform.aiBufferedAction = 'parry';
+      break;
+    case 'dash':
+      transform.aiBufferedAction = 'dash';
+      break;
+    case 'roll':
+      transform.aiBufferedAction = 'roll';
+      break;
+    default:
+      break;
+  }
+}
+

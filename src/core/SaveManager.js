@@ -117,6 +117,42 @@ class SaveManager {
       this.data.achievements[key] = { ...DefaultSaveData.achievements[key], unlocked: false };
     }
     this.save();
+    // Also clear the RL Q-table when resetting save data
+    this.saveQTable(null);
+  }
+
+  // ── RL Q-table persistence ─────────────────────────────────────────────────
+
+  /**
+   * Persist the RL agent's serialized Q-table to localStorage.
+   * @param {string|null} serialized - JSON string from RLAgent.serialize(), or null to clear
+   */
+  saveQTable(serialized) {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      if (serialized === null) {
+        window.localStorage.removeItem('psf_rl_qtable');
+      } else {
+        window.localStorage.setItem('psf_rl_qtable', serialized);
+      }
+    } catch (e) {
+      console.warn('[RL] Failed to save Q-table:', e);
+    }
+  }
+
+  /**
+   * Load a previously saved RL Q-table from localStorage.
+   * @returns {Object|null} Parsed Q-table data, or null if not found / invalid
+   */
+  loadQTable() {
+    if (typeof window === 'undefined' || !window.localStorage) return null;
+    try {
+      const raw = window.localStorage.getItem('psf_rl_qtable');
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.warn('[RL] Failed to load Q-table:', e);
+      return null;
+    }
   }
 }
 

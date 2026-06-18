@@ -25,10 +25,37 @@ import { UIManager } from './core/UIManager.js';
 import { ComponentTypes } from './ecs/componentTypes.js';
 import { audioEngine } from './core/AudioEngine.js';
 import { saveManager } from './core/SaveManager.js';
+import { RLAgent } from './ai/RLAgent.js';
+import { RewardCalculator } from './ai/RewardCalculator.js';
+import { encodeState } from './ai/StateEncoder.js';
+import { RLSyncService } from './ai/RLSyncService.js';
+
+/**
+ * Updates the RL stats panel DOM elements during an adaptive match.
+ * @param {{ matchCount: number, statesKnown: number, epsilon: string }|null} stats
+ * @param {boolean} visible
+ */
+function updateRLStatsPanel(stats, visible) {
+  const panel = document.getElementById('rl-stats-panel');
+  if (!panel) return;
+  if (!visible || !stats) {
+    panel.classList.add('hidden');
+    return;
+  }
+  panel.classList.remove('hidden');
+  const mc = document.getElementById('rl-matches');
+  const sk = document.getElementById('rl-states');
+  const ep = document.getElementById('rl-epsilon');
+  if (mc) mc.textContent = stats.matchCount;
+  if (sk) sk.textContent = stats.statesKnown;
+  if (ep) ep.textContent = stats.epsilon;
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
   // 1. Initialize PixiJS Application
   const pixiApp = new PixiApp();
+
   const layers = createRenderLayers(pixiApp.gameplayViewport);
   pixiApp.layers = layers;
 
@@ -38,6 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputSystem = new InputSystem();
   let hudSystem = null;
   let uiManager = null;
+
+  // ── RL Agent (persistent across matches) ────────────────────────────────
+  const rlAgent      = new RLAgent(saveManager.loadQTable());
+  const rewardCalc   = new RewardCalculator();
+  let   rlDifficulty = false; // true when current match uses adaptive AI
+  let   rlPrevState  = null;  // state key from previous tick
 
   const matchState = {
     active: false,
@@ -114,6 +147,25 @@ document.addEventListener('DOMContentLoaded', () => {
     matchState.playerEntityId = player;
     matchState.aiEntityId = ai;
     matchState.startTime = Date.now();
+
+    // ── RL: initialise reward baseline for this match ──────────────────────
+    rlDifficulty = p2Opts.difficulty === 'adaptive';
+    if (rlDifficulty) {
+      const aiH  = world.getComponent(ai,     ComponentTypes.HEALTH);
+      const plH  = world.getComponent(player, ComponentTypes.HEALTH);
+      rewardCalc.reset(
+        aiH ? aiH.current : 100,
+        plH ? plH.current : 100
+      );
+      rlPrevState = null;
+      // Fetch global Q-table from server (non-blocking — game starts while fetching)
+      RLSyncService.fetchGlobalQTable().then(globalData => {
+        if (globalData) rlAgent.initFromGlobal(globalData);
+      });
+      updateRLStatsPanel(rlAgent.getStats(), true);
+    } else {
+      updateRLStatsPanel(null, false);
+    }
 
     // Add character sprites to PixiJS rendering layer
     const p1SpriteRef = world.getComponent(player, ComponentTypes.SPRITE_REF);
@@ -192,7 +244,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Run ECS Input & AI Systems
     inputSystem.update(world, dt);
-    aiSystem(world);
+    aiSystem(world, rlDifficulty ? rlAgent : null);
+
+    // ── RL: per-tick Q-update ──────────────────────────────────────────────
+    if (rlDifficulty) {
+      const aiH  = world.getComponent(ai,     ComponentTypes.HEALTH);
+      const plH  = world.getComponent(player, ComponentTypes.HEALTH);
+      const reward    = rewardCalc.computeTickReward(
+        aiH ? aiH.current : 0,
+        plH ? plH.current : 0
+      );
+      const nextState = encodeState(world, ai, player);
+      if (rlPrevState && rlAgent.lastAction && nextState) {
+        rlAgent.update(rlPrevState, rlAgent.lastAction, reward, nextState);
+      }
+      rlPrevState = nextState;
+      updateRLStatsPanel(rlAgent.getStats(), true);
+    }
 
     // Resolve Actions
     actionResolutionSystem(world, physics);
@@ -271,6 +339,19 @@ document.addEventListener('DOMContentLoaded', () => {
         audioEngine.stopMusic();
 
         const winner = playerHealth.current > 0 ? 'player' : 'ai';
+
+        // ── RL: end-of-match update + persist ─────────────────────────────
+        if (rlDifficulty) {
+          const isFlawless  = winner === 'ai' && playerHealth.current === playerHealth.max;
+          const matchReward = rewardCalc.computeMatchReward(winner, isFlawless);
+          rlAgent.onMatchEnd(matchReward);
+          // Persist locally
+          saveManager.saveQTable(rlAgent.serialize());
+          // Upload delta to global server (fire-and-forget)
+          const delta = rlAgent.drainDelta();
+          RLSyncService.contributeQTable(delta, 1);
+          updateRLStatsPanel(rlAgent.getStats(), true);
+        }
 
         // End-game achievements
         if (winner === 'player') {
