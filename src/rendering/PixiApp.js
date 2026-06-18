@@ -5,15 +5,18 @@ PIXI.BaseTexture.defaultOptions.scaleMode = PIXI.SCALE_MODES.NEAREST;
 
 export class PixiApp {
   constructor() {
-    this.logicalWidth = 480;
-    this.logicalHeight = 270;
+    this.logicalWidth = 640;
+    this.logicalHeight = 360;
     
     const canvas = document.getElementById('game-canvas');
+    const wrapper = document.getElementById('game-canvas-wrapper');
+    const initialWidth = wrapper ? wrapper.clientWidth : window.innerWidth;
+    const initialHeight = wrapper ? wrapper.clientHeight : window.innerHeight;
     
     this.app = new PIXI.Application({
       view: canvas,
-      width: window.innerWidth,
-      height: window.innerHeight,
+      width: initialWidth,
+      height: initialHeight,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
       antialias: false,
@@ -31,21 +34,17 @@ export class PixiApp {
   }
 
   resize() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const wrapper = document.getElementById('game-canvas-wrapper');
+    const w = wrapper ? wrapper.clientWidth : window.innerWidth;
+    const h = wrapper ? wrapper.clientHeight : window.innerHeight;
     
     // Resize the renderer
     this.app.renderer.resize(w, h);
 
-    // Calculate integer scale factor to fit the viewport
+    // Calculate scale factor to fit the viewport
     const scaleX = w / this.logicalWidth;
     const scaleY = h / this.logicalHeight;
-    let scale = Math.min(scaleX, scaleY);
-    
-    // Force integer scale if it's >= 1, otherwise use float
-    if (scale >= 1) {
-      scale = Math.floor(scale);
-    }
+    const scale = Math.min(scaleX, scaleY);
     
     // Scale viewport
     this.gameplayViewport.scale.set(scale);
